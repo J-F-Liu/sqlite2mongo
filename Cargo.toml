@@ -1,7 +1,13 @@
 [package]
 authors = ["Junfeng Liu <china.liujunfeng@gmail.com>"]
+categories = ["database"]
+description = "Import sqlite database to mongodb."
 edition = "2018"
+keywords = ["MongoDB", "Sqlite"]
+license = "MIT"
 name = "sqlite2mongo"
+readme = "README.md"
+repository = "https://github.com/J-F-Liu/sqlite2mongo.git"
 version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

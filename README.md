@@ -1,3 +1,5 @@
+[![Crates.io](https://img.shields.io/crates/v/sqlite2mongo.svg)](https://crates.io/crates/sqlite2mongo)
+
 Import sqlite database to mongodb.
 
 ### Usage
