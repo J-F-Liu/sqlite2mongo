@@ -32,6 +32,18 @@ async fn main() -> Result<()> {
     let client = Client::with_uri_str(&args.mongodb_uri).await?;
     let database = client.database(&args.mongo_database);
 
+    if database.list_collection_names(None).await?.len() > 0 {
+        println!("Confirm delete the exiting database (type 'yes' to continue)?");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        if input.trim_end() == "yes" {
+            database.drop(None).await?;
+        } else {
+            println!("Abort");
+            return Ok(());
+        }
+    }
+
     let tables = get_tables(&mut conn).await?;
     for table in tables {
         println!("Table: {}", &table);
