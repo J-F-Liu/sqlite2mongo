@@ -1,5 +1,5 @@
 use anyhow::Result;
-use heck::MixedCase;
+use heck::ToLowerCamelCase;
 use mongodb::{bson::*, Client, Database};
 use sqlx::{
     sqlite::*,
@@ -20,9 +20,9 @@ struct Args {
     /// Test reading sqlite data, do not create mongodb collection
     #[structopt(long)]
     dry_run: bool,
-    /// Convert field name to mixed case
+    /// Convert field name to lower camel case
     #[structopt(long)]
-    mixed_case: bool,
+    lower_camel: bool,
 }
 
 #[async_std::main]
@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
     for table in tables {
         println!("Table: {}", &table);
         let row_count =
-            create_collection(&mut conn, &database, table, args.mixed_case, args.dry_run).await?;
+            create_collection(&mut conn, &database, table, args.lower_camel, args.dry_run).await?;
         println!("Imported {} rows.", row_count);
     }
     Ok(())
@@ -71,7 +71,7 @@ async fn create_collection(
     conn: &mut SqliteConnection,
     database: &Database,
     table: String,
-    mixed_case: bool,
+    lower_camel: bool,
     dry_run: bool,
 ) -> Result<usize> {
     let mut row_count = 0;
@@ -80,7 +80,7 @@ async fn create_collection(
         .fetch_all(conn)
         .await?;
     for row in rows {
-        let doc = create_mongo_document(row, mixed_case);
+        let doc = create_mongo_document(row, lower_camel);
         if !dry_run {
             collection.insert_one(doc, None).await?;
         }
@@ -89,7 +89,7 @@ async fn create_collection(
     Ok(row_count)
 }
 
-fn create_mongo_document(row: SqliteRow, mixed_case: bool) -> Document {
+fn create_mongo_document(row: SqliteRow, lower_camel: bool) -> Document {
     let mut doc = Document::new();
     for column in row.columns() {
         let field = column.name();
@@ -104,8 +104,8 @@ fn create_mongo_document(row: SqliteRow, mixed_case: bool) -> Document {
                 value
             }
         };
-        if mixed_case {
-            doc.insert(field.to_mixed_case(), bson_value);
+        if lower_camel {
+            doc.insert(field.to_lower_camel_case(), bson_value);
         } else {
             doc.insert(field, bson_value);
         }
@@ -130,7 +130,7 @@ fn get_field_value(row: &SqliteRow, field: &str, type_name: &str) -> Bson {
         "INTEGER" => Bson::Int64(row.get::<i64, _>(field)),
         "REAL" => Bson::Double(row.get::<f64, _>(field)),
         "TEXT" => Bson::String(row.get::<String, _>(field)),
-        "DATETIME" => Bson::DateTime(row.get::<DateTime<Utc>, _>(field)),
+        "DATETIME" => Bson::DateTime(row.get::<DateTime<Utc>, _>(field).into()),
         "BLOB" => Bson::Binary(Binary {
             subtype: mongodb::bson::spec::BinarySubtype::Generic,
             bytes: row.get::<Vec<u8>, _>(field),
